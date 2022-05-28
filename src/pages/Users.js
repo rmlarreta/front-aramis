@@ -23,6 +23,7 @@ const Users = () => {
 
     const activo = useSelector(store => store.users.activo);
     const perfil = useSelector(store => store.users.perfil);
+    const load = useSelector(store => store.users.loading);
 
     const [perfiles, setPerfiles] = useState({ id: null, rol: null });
     const [users, setUsers] = useState([]);
@@ -83,13 +84,13 @@ const Users = () => {
     }
 
     useEffect(() => {
-        if (activo === true && perfil === 3) {
+        if (activo && perfil > 2) {
             fetchUsers();
         }
-    }, [activo, perfil]);
+    }, [activo, perfil,load]);
 
     return (
-        activo && perfil === 3 ? (
+        activo && perfil > 2 ? (
             <div className="col-12">
                 <div className="card">
                     <h5>Usuarios</h5>
