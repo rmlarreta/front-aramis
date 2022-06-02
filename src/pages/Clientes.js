@@ -3,97 +3,94 @@ import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
 import { Dialog } from 'primereact/dialog';
 import { Dropdown } from 'primereact/dropdown';
+import { InputMask } from 'primereact/inputmask';
 import { InputNumber } from 'primereact/inputnumber';
 import { InputText } from 'primereact/inputtext';
-import { Rating } from 'primereact/rating';
+import { InputTextarea } from 'primereact/inputtextarea';
 import { Skeleton } from 'primereact/skeleton';
 import { Toast } from 'primereact/toast';
 import { classNames } from 'primereact/utils';
 import { default as React, useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import AddProducto from '../components/AddProducto';
+import AddCliente from '../components/AddCliente';
+import AddImputacion from '../components/AddImputacion';
+import Imputaciones from '../components/Imputaciones';
+import { DeleteCliente, UpdateCliente } from '../redux/clientesducks';
 import { messageService } from '../redux/messagesducks';
-import { DeleteProducto, InsertProducto, UpdateProducto } from '../redux/stockducks';
-import { StockService } from '../service/StockService';
+import { ClienteService } from '../service/ClienteService';
 
 const Clientes = () => {
 
     const dispatch = useDispatch();
     const toast = useRef(null);
     const activo = useSelector(store => store.users.activo);
-    const load = useSelector(store => store.stock.loading);
-    const stockService = new StockService();
+    const load = useSelector(store => store.clientes.loading);
+    const loadimp = useSelector(store => store.clientes.loadimput);
+    const clienteService = new ClienteService();
 
     const [filter, setfilter] = useState(null);
     const [loading, setloading] = useState(true);
-    const [productos, setproductos] = useState([]);
-    const [product, setproduct] = useState([]);
-    const [ivas, setivas] = useState([]);
-    const [rubros, setrubros] = useState([]);
+    const [clientes, setclientes] = useState([]);
+    const [model, setmodel] = useState([]);
+    const [respos, setrespos] = useState([]);
+    const [generos, setgeneros] = useState([]);
+    const [imputaciones, setimputaciones] = useState([]);
     const [display, setdisplay] = useState(false);
     const [submitted, setSubmitted] = useState(false);
-    const [deleteProductDialog, setDeleteProductDialog] = useState(false);
+    const [deleteDialog, setDeleteDialog] = useState(false);
 
-    const fetchStock = async () => {
+    const fetchClientes = async () => {
         setloading(true);
-        await stockService.GetProductos()
+        await clienteService.GetClientes()
             .then(data => {
-                setproductos(data);
+                setclientes(data);
             }).catch((error) => dispatch(messageService(false, error.response.data.message, error.response.status)));
         setloading(false);
     }
 
     const fetchAuxiliares = async () => {
-        await stockService.GetIvas()
+        await clienteService.GetGenero()
             .then(data => {
-                setivas(data);
+                setgeneros(data);
             }).catch((error) => dispatch(messageService(false, error.response.data.message, error.response.status)));
-        await stockService.GetRubros()
+        await clienteService.GetImputaciones()
             .then(data => {
-                setrubros(data);
+                setimputaciones(data);
+            }).catch((error) => dispatch(messageService(false, error.response.data.message, error.response.status)));
+        await clienteService.GetRespo()
+            .then(data => {
+                setrespos(data);
             }).catch((error) => dispatch(messageService(false, error.response.data.message, error.response.status)));
     }
 
     const onEditModel = (rowData) => {
-        setproduct(rowData);
+        setmodel(rowData);
         setdisplay(true);
     }
 
     const onInputChange = (e, name) => {
         const val = (e.target && e.target.value) || '';
-        let _product = { ...product };
-        _product[`${name}`] = val;
-        setproduct(_product);
-        if (name === 'iva' && val > 0) {
-            calcularPrecio(_product);
-        }
+        let _model = { ...model };
+        _model[`${name}`] = val;
+        setmodel(_model);
     }
 
     const onInputNumberChange = (e, name) => {
         const val = e.value || 0;
-        let _product = { ...product };
-        _product[`${name}`] = val;
-        setproduct(_product);
-        calcularPrecio(_product);
-    }
-
-    const calcularPrecio = (_product) => {
-        let iva = ivas.find(id => id.id === _product.iva);
-        if (iva) {
-            let precio = _product.costo * (1 + (iva.tasa / 100)) * (1 + (_product.tasa / 100)) + _product.internos;
-            _product.precio = precio;
-            setproduct(_product);
-        }
+        let _model = { ...model };
+        _model[`${name}`] = val;
+        setmodel(_model);
     }
 
     const onSubmit = () => {
         setSubmitted(true);
-        if (product.codigo.trim() &&
-            product.detalle.trim() &&
-            product.rubro &&
-            product.iva
+        if (model.nombre.trim()&&
+        model.responsabilidad&&
+        model.genero&&
+        model.imputacion&&
+        model.cuit
         ) {
-            dispatch(UpdateProducto(product));
+            dispatch(UpdateCliente(model));
             setSubmitted(false);
             setdisplay(false);
         } else {
@@ -101,26 +98,33 @@ const Clientes = () => {
         }
     }
 
-    const confirmDeleteProduct = (rowData) => {
-        setproduct(rowData);
-        setDeleteProductDialog(true);
+    const confirmDelete = (rowData) => {
+        setmodel(rowData);
+        setDeleteDialog(true);
     }
 
-    const deleteProduct = () => {
-        dispatch(DeleteProducto(product.id));
-        setDeleteProductDialog(false);
+    const deleteCliente = () => {
+        dispatch(DeleteCliente(model.id));
+        setDeleteDialog(false);
     }
 
     useEffect(() => {
         if (activo) {
-            fetchStock();
+            fetchClientes();
             fetchAuxiliares();
         }
     }, [activo, load]);
 
+    useEffect(() => {
+        if (activo && !loadimp) {
+            fetchAuxiliares();
+        }
+    }, [activo, loadimp]);
+
     const header = (
         <div className="flex flex-column md:flex-row md:justify-content-between md:align-items-center">
-            <AddProducto></AddProducto>
+            <AddCliente></AddCliente>
+            <Imputaciones></Imputaciones>
             <span className="block mt-2 md:mt-0 p-input-icon-left">
                 <i className="pi pi-search" />
                 <InputText type="search" onInput={(e) => setfilter(e.target.value)} placeholder="Buscar..." />
@@ -128,17 +132,17 @@ const Clientes = () => {
         </div>
     );
 
-    const productDialogFooter = (
+    const clienteDialogFooter = (
         <React.Fragment>
             <Button label="Cancelar" icon="pi pi-times" className="p-button-text" onClick={() => setdisplay(false)} />
-            <Button label="Alta" icon="pi pi-check" className="p-button-text" onClick={() => onSubmit()} />
+            <Button label="Enviar" icon="pi pi-check" className="p-button-text" onClick={() => onSubmit()} />
         </React.Fragment>
     );
 
-    const deleteProductDialogFooter = (
+    const deleteDialogFooter = (
         <React.Fragment>
-            <Button label="No" icon="pi pi-times" className="p-button-text" onClick={() => setDeleteProductDialog(false)} />
-            <Button label="Si" icon="pi pi-check" className="p-button-text" onClick={() => deleteProduct()} />
+            <Button label="No" icon="pi pi-times" className="p-button-text" onClick={() => setDeleteDialog(false)} />
+            <Button label="Si" icon="pi pi-check" className="p-button-text" onClick={() => deleteCliente()} />
         </React.Fragment>
     );
 
@@ -146,15 +150,7 @@ const Clientes = () => {
         return (
             <>
                 <Button icon="pi pi-pencil" className="p-button-rounded p-button-info p-button-text mr-2 mb-2" onClick={() => onEditModel(rowData)} />
-                <Button icon="pi pi-trash" className="p-button-rounded p-button-danger p-button-text mr-2 mb-2" onClick={() => confirmDeleteProduct(rowData)} />
-            </>
-        )
-    }
-
-    const stockTemplate = (rowData) => {
-        return (
-            <>
-                <Rating value={rowData.stock} readOnly stars={rowData.stock <= 0 ? 0 : rowData.stock <= 5 ? 1 : rowData.stock > 5 && rowData.stock <= 10 ? 2 : 3} />
+                <Button icon="pi pi-trash" className="p-button-rounded p-button-danger p-button-text mr-2 mb-2" onClick={() => confirmDelete(rowData)} />
             </>
         )
     }
@@ -164,68 +160,86 @@ const Clientes = () => {
             <div className="col-12">
                 <Toast ref={toast} />
                 <div className="card">
-                    <h5>Stock</h5>
-                    <DataTable value={productos} dataKey="id" loading={loading}
+                    <h5>Clientes</h5>
+                    <DataTable value={clientes} dataKey="id" loading={loading}
                         paginator rows={10} rowsPerPageOptions={[5, 10, 25]} className="datatable-responsive"
                         paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-                        currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} productos"
+                        currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} clientes"
                         globalFilter={filter} emptyMessage="Sin Datos." header={header} responsiveLayout="scroll">
-                        <Column field="codigo" header="Código" sortable />
-                        <Column field="detalle" header="Detalle" sortable />
-                        <Column field="stock" header="Stock" sortable body={stockTemplate} />
-                        <Column field="rubroStr" header="Rubro" sortable />
-                        <Column field="precio" header="Precio" sortable />
+                        <Column field="cuit" header="Cuit" sortable />
+                        <Column field="nombre" header="Nombre" sortable />
+                        <Column field="responsabilidad" header="Iva" sortable />
+                        <Column field="telefono" header="Telefono" sortable />
+                        <Column field="mail" header="Mail" sortable />
                         <Column headerStyle={{ width: '4rem' }} body={actionTemplate}></Column>
                     </DataTable>
-                    <Dialog header="Editar Producto" className="p-fluid" visible={display} style={{ width: '50vw' }} modal onHide={() => setdisplay(false)} footer={productDialogFooter} >
+                    <Dialog header="Editar Cliente" className="p-fluid" visible={display} style={{ width: '50vw' }} modal onHide={() => setdisplay(false)} footer={clienteDialogFooter} >
                         <div className="field grid">
                             <div className="field col-3">
                                 <br></br>
-                                <label htmlFor="codigo">Codigo</label>
-                                <InputText id="codigo" value={product.codigo} onChange={(e) => onInputChange(e, 'codigo')} required autoFocus className={classNames({ 'p-invalid': submitted && !product.codigo })} />
-                                {submitted && !product.codigo && <small className="p-error">Codigo es requerido.</small>}
+                                <label htmlFor="cuit">Cuit</label>
+                                <InputNumber id="cuit" value={model.cuit} onChange={(e) => onInputNumberChange(e, 'cuit')} integeronly useGrouping={false} required autoFocus className={classNames({ 'p-invalid': submitted && !model.cuit })} />
+                                {submitted && !model.cuit && <small className="p-error">Cuit es requerido.</small>}
                             </div>
                             <div className="field col-9">
                                 <br></br>
-                                <label htmlFor="detalle">Detalle</label>
-                                <InputText id="detalle" value={product.detalle} onChange={(e) => onInputChange(e, 'detalle')} required autoFocus className={classNames({ 'p-invalid': submitted && !product.detalle })} />
-                                {submitted && !product.detalle && <small className="p-error">Detalle es requerido.</small>}
+                                <label htmlFor="nombre">Nombre</label>
+                                <InputText id="nombre" value={model.nombre} onChange={(e) => onInputChange(e, 'nombre')} required autoFocus className={classNames({ 'p-invalid': submitted && !model.nombre })} />
+                                {submitted && !model.nombre && <small className="p-error">Nombre es requerido.</small>}
                             </div>
                             <div className="field col-6">
-                                <label htmlFor="rubro">Rubro</label>
-                                <Dropdown name="rubro" onChange={(e) => onInputChange(e, 'rubro')} value={product.rubro} options={rubros} optionValue="id" optionLabel="detalle" placeholder="Rubro"
-                                    filter showClear filterBy="detalle" required autoFocus className={classNames({ 'p-invalid': submitted && !product.rubro })} />
-                                {submitted && !product.rubro && <small className="p-error">Rubro es requerido.</small>}
-                            </div>
-
-                            <div className="field col-6">
-                                <label htmlFor="costo">Costo</label>
-                                <InputNumber id="costo" value={product.costo} onChange={(e) => onInputNumberChange(e, 'costo')} mode="currency" currency="USD" locale="en-US" />
+                                <label htmlFor="genero">Genero</label>
+                                <Dropdown name="genero" onChange={(e) => onInputChange(e, 'genero')} value={model.genero} options={generos} optionValue="id" optionLabel="id" placeholder="Genero"
+                                    filter showClear filterBy="id" required autoFocus className={classNames({ 'p-invalid': submitted && !model.genero })} />
+                                {submitted && !model.genero && <small className="p-error">Genero es requerido.</small>}
                             </div>
                             <div className="field col-6">
-                                <label htmlFor="internos">Internos</label>
-                                <InputNumber id="internos" value={product.internos} onChange={(e) => onInputNumberChange(e, 'internos')} mode="currency" currency="USD" locale="en-US" />
+                                <label htmlFor="responsabilidad">Responsabilidad</label>
+                                <Dropdown name="responsabilidad" onChange={(e) => onInputChange(e, 'responsabilidad')} value={model.responsabilidad} options={respos} optionValue="id" optionLabel="id" placeholder="Responsabilidad"
+                                    filter showClear filterBy="id" required autoFocus className={classNames({ 'p-invalid': submitted && !model.responsabilidad })} />
+                                {submitted && !model.responsabilidad && <small className="p-error">Responsabilidad es requerido.</small>}
                             </div>
-                            <div className="field col-6">
-                                <label htmlFor="iva">Iva</label>
-                                <Dropdown name="iva" onChange={(e) => onInputChange(e, 'iva')} value={product.iva} options={ivas} optionValue="id" optionLabel="tasa" placeholder="Iva"
-                                    filter showClear filterBy="tasa" required autoFocus className={classNames({ 'p-invalid': submitted && !product.iva })} />
-                                {submitted && !product.iva && <small className="p-error">Iva es requerido.</small>}
+                            <div className="field col-12">
+                                <AddImputacion></AddImputacion>
+                                <Dropdown name="imputacion" onChange={(e) => onInputChange(e, 'imputacion')} value={model.imputacion} options={imputaciones} optionValue="id" optionLabel="detalle" placeholder="Imputacion"
+                                    filter showClear filterBy="detalle" required autoFocus className={classNames({ 'p-invalid': submitted && !model.imputacion })} />
+                                {submitted && !model.imputacion && <small className="p-error">Imputacion es requerido.</small>}
                             </div>
-                            <div className="field col-6">
-                                <label htmlFor="tasa">Tasa %</label>
-                                <InputNumber id="tasa" value={product.tasa} onChange={(e) => onInputNumberChange(e, 'tasa')} integeronly />
+                            <div className="field col-8">
+                                <label htmlFor="domicilio">Domicilio</label>
+                                <InputText id="domicilio" value={model.domicilio} onChange={(e) => onInputChange(e, 'domicilio')} required autoFocus className={classNames({ 'p-invalid': submitted && !model.domicilio })} />
+                                {submitted && !model.domicilio && <small className="p-error">Domicilio es requerido.</small>}
                             </div>
-                            <div className="field col-6">
-                                <label htmlFor="precio">Precio Final</label>
-                                <InputNumber id="precio" value={product.precio} readOnly mode="currency" currency="USD" locale="en-US" />
+                            <div className="field col-4 md:col-4">
+                                <label htmlFor="telefono">Telefono</label>
+                                <InputMask id="telefono" mask="(999) 999-9999" value={model.telefono} placeholder="(999) 999-9999" onChange={(e) => onInputChange(e, 'telefono')} required autoFocus className={classNames({ 'p-invalid': submitted && !model.telefono })} />
+                                {submitted && !model.telefono && <small className="p-error">Telefono es requerido.</small>}
+                            </div>
+                            <div className="field col-4">
+                                <label htmlFor="mail">Mail</label>
+                                <InputText type="email" id="mail" value={model.mail} onChange={(e) => onInputChange(e, 'mail')} required autoFocus className={classNames({ 'p-invalid': submitted && !model.mail })} />
+                                {submitted && !model.mail && <small className="p-error">Mail es requerido.</small>}
+                            </div>
+                            <div className="field col-8">
+                                <label htmlFor="observaciones">Observaciones</label>
+                                <InputTextarea id="observaciones" value={model.observaciones} onChange={(e) => onInputChange(e, 'observaciones')} />
+                            </div>
+                            <div className="field col-7">
+                                <label htmlFor="nombreFantasia">Nombre Fantasia</label>
+                                <InputText type="nombreFantasia" id="nombreFantasia" value={model.nombreFantasia} onChange={(e) => onInputChange(e, 'nombreFantasia')}   autoFocus className={classNames({ 'p-invalid': submitted && !model.nombreFantasia })} />
+                                {submitted && !model.nombreFantasia && <small className="p-error">Nombre Fantasia es requerido.</small>}
+                            </div>
+                            <div className="field col-3">
+                                <label htmlFor="limiteSaldo">Limite Saldo</label>
+                                <InputNumber id="limiteSaldo" value={model.limiteSaldo} onChange={(e) => onInputNumberChange(e, 'limiteSaldo')} integeronly useGrouping={false}   autoFocus className={classNames({ 'p-invalid': submitted && !model.limiteSaldo })} />
+                                {submitted && !model.limiteSaldo && <small className="p-error">Limite Saldo es requerido.</small>}
                             </div>
                         </div>
                     </Dialog>
-                    <Dialog visible={deleteProductDialog} style={{ width: '450px' }} header="Confirm" modal footer={deleteProductDialogFooter} onHide={()=>setDeleteProductDialog(false)}>
+                    <Dialog visible={deleteDialog} style={{ width: '450px' }} header="Confirm" modal footer={deleteDialogFooter} onHide={() => setDeleteDialog(false)}>
                         <div className="confirmation-content">
                             <i className="pi pi-exclamation-triangle mr-3" style={{ fontSize: '2rem' }} />
-                            {product && <span>Estas seguro de eliminar <b>{product.detalle}</b>?</span>}
+                            {model && <span>Estas seguro de eliminar <b>{model.nombre}</b>?</span>}
                         </div>
                     </Dialog>
                 </div>

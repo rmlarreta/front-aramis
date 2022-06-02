@@ -10,8 +10,9 @@ import { AppConfig } from './AppConfig';
 
 //paginas de Aramis
 
- import Users from './pages/Users'; 
- import Stock from './pages/Stock'; 
+import Users from './pages/Users';
+import Stock from './pages/Stock';
+import Clientes from './pages/Clientes';
 //componentes del DEmo
 
 import ChartDemo from './components/ChartDemo';
@@ -142,9 +143,10 @@ const App = () => {
     const menu = [
         {
             label: 'Home',
-            items: [{
-                label: 'Dashboard', icon: 'pi pi-fw pi-home', to: '/'
-            }]
+            items: [
+                { label: 'Dashboard', icon: 'pi pi-fw pi-home', to: '/' },
+                { label: 'Clientes', icon: 'pi pi-fw pi-users', to: '/clientes' }
+            ]
         },
         {
             label: 'Stock',
@@ -155,7 +157,7 @@ const App = () => {
         {
             label: 'Opciones',
             items: [
-                {label: 'Usuarios', icon: 'pi pi-fw pi-user-edit', to: '/users'}, 
+                { label: 'Usuarios', icon: 'pi pi-fw pi-user-edit', to: '/users' },
             ]
         },
         {
@@ -257,9 +259,10 @@ const App = () => {
             <div className="layout-main-container">
                 <div className="layout-main">
                     <Route path="/chart" render={() => <ChartDemo colorMode={layoutColorMode} />} />
-                    {/*  De Aramis */} 
+                    {/*  De Aramis */}
                     <Route path="/users" component={Users} />
-                    <Route path="/stock" component={Stock} /> 
+                    <Route path="/stock" component={Stock} />
+                    <Route path="/clientes" component={Clientes} />
                 </div>
 
                 <AppFooter layoutColorMode={layoutColorMode} />
