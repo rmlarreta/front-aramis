@@ -13,6 +13,8 @@ import { AppConfig } from './AppConfig';
 import Users from './pages/Users';
 import Stock from './pages/Stock';
 import Clientes from './pages/Clientes';
+import Documents from './pages/Documents';
+import Operation from './pages/Operation';
 //componentes del DEmo
 
 import ChartDemo from './components/ChartDemo';
@@ -145,7 +147,8 @@ const App = () => {
             label: 'Home',
             items: [
                 { label: 'Dashboard', icon: 'pi pi-fw pi-home', to: '/' },
-                { label: 'Clientes', icon: 'pi pi-fw pi-users', to: '/clientes' }
+                { label: 'Clientes', icon: 'pi pi-fw pi-users', to: '/clientes' },
+                { label: 'Operaciones', icon: 'pi pi-shopping-cart', to: '/documents' }
             ]
         },
         {
@@ -263,6 +266,8 @@ const App = () => {
                     <Route path="/users" component={Users} />
                     <Route path="/stock" component={Stock} />
                     <Route path="/clientes" component={Clientes} />
+                    <Route path="/documents" component={Documents} />
+                    <Route path="/operation" component={Operation} />
                 </div>
 
                 <AppFooter layoutColorMode={layoutColorMode} />

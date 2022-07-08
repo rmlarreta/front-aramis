@@ -25,21 +25,28 @@ export default function stockReducer(state = dataInicial, action) {
 }
 
 export const UpdateProducto = (data) => async (dispatch) => {
-    var form = new FormData();
-    form.append('Id', data.id)
-    form.append('Codigo', data.codigo)
-    form.append('Detalle', data.detalle)
-    form.append('Rubro', data.rubro)
-    form.append('Costo', data.costo)
-    form.append('Iva', data.iva)
-    form.append('Internos', data.internos)
-    form.append('Tasa', data.tasa)
-    form.append('Stock', data.stock)
-    form.append('Servicio', data.servicio)
+    let lm = []
+    data.forEach(e =>
+        lm.push({
+            Id: e.id,
+            Codigo: e.codigo,
+            Detalle: e.detalle,
+            Rubro: e.rubro,
+            Costo:e.costo,
+            Iva: e.iva,
+            Internos:  e.internos,
+            Tasa: e.tasa,
+            Stock: e.stock,
+            Servicio:e.servicio
+        }));
+    var json = JSON.stringify(lm);   
     dispatch({
         type: LOADING
     })
-    await request.patch('Stock/UpdateProducto', form)
+    const options = {
+        headers: { "content-type": "application/json" }
+    }
+    await request.patch('Stock/UpdateProducto', json, options)
         .then(function (response) {
             dispatch({
                 type: OK,
@@ -126,13 +133,20 @@ export const DeleteProducto = (data) => async (dispatch) => {
 }
 
 export const UpdateRubro = (data) => async (dispatch) => {
-    var form = new FormData();
-    form.append('Id', data.id) 
-    form.append('Detalle', data.detalle) 
+    let lm = []
+    data.forEach(e =>
+        lm.push({
+            Id: e.id, 
+            Detalle: e.detalle 
+        }));
+    var json = JSON.stringify(lm);   
     dispatch({
         type: LOADING
     })
-    await request.patch('Stock/UpdateRubro', form)
+    const options = {
+        headers: { "content-type": "application/json" }
+    } 
+    await request.patch('Stock/UpdateRubro', json, options)
         .then(function (response) {
             dispatch({
                 type: OK,

@@ -46,7 +46,7 @@ const Rubros = () => {
         setdisplayEdit(true);
     }
 
-    const onInsertModel = () => {
+    const onInsertModel = () => { 
         setrubro(modelVacio);
         setdisplayAdd(true);
     }
@@ -74,7 +74,9 @@ const Rubros = () => {
         setSubmitted(true);
         if (rubro.detalle.trim()
         ) {
-            dispatch(UpdateRubro(rubro));
+            let lm = [];
+            lm.push(rubro)
+            dispatch(UpdateRubro(lm));
             setSubmitted(false);
             setdisplayEdit(false);
         } else {

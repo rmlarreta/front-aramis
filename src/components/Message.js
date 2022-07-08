@@ -16,7 +16,7 @@ const Message = () => {
                     break;
                 case 401: toast.current.show({ severity: 'error', summary: 'Autenticacion', detail: message, life: 3000 });
                     break;
-                default: toast.current.show({ severity: 'info', summary: 'Atendeme', detail: message, life: 3000 });
+               // default: toast.current.show({ severity: 'info', summary: 'Atendeme', detail: message, life: 3000 });
             }
         }
     }, [message, status]);

@@ -14,7 +14,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import AddProducto from '../components/AddProducto';
 import Rubros from '../components/Rubros';
 import { messageService } from '../redux/messagesducks';
-import { DeleteProducto, InsertProducto, UpdateProducto } from '../redux/stockducks';
+import { DeleteProducto, UpdateProducto } from '../redux/stockducks';
 import { StockService } from '../service/StockService';
 
 const Stock = () => {
@@ -81,7 +81,7 @@ const Stock = () => {
     const calcularPrecio = (_product) => {
         let iva = ivas.find(id => id.id === _product.iva);
         if (iva) {
-            let precio = _product.costo * (1 + (iva.tasa / 100)) * (1 + (_product.tasa / 100)) + _product.internos;
+            let precio = _product.costo * (1 + (iva.tasa / 100)) * (1 + (_product.tasa / 100)) * (1+(_product.internos/100));
             _product.precio = precio;
             setproduct(_product);
         }
@@ -94,7 +94,9 @@ const Stock = () => {
             product.rubro &&
             product.iva
         ) {
-            dispatch(UpdateProducto(product));
+            let lm = [];
+            lm.push(product)
+            dispatch(UpdateProducto(lm));
             setSubmitted(false);
             setdisplay(false);
         } else {
@@ -162,9 +164,9 @@ const Stock = () => {
     }
 
     return (
-        activo ? (
+        activo ? (<>
+            <Toast ref={toast} />
             <div className="col-12">
-                <Toast ref={toast} />
                 <div className="card">
                     <h5>Stock</h5>
                     <DataTable value={productos} dataKey="id" loading={loading}
@@ -204,21 +206,21 @@ const Stock = () => {
                                 <label htmlFor="costo">Costo</label>
                                 <InputNumber id="costo" value={product.costo} onChange={(e) => onInputNumberChange(e, 'costo')} mode="currency" currency="USD" locale="en-US" />
                             </div>
-                            <div className="field col-6">
-                                <label htmlFor="internos">Internos</label>
-                                <InputNumber id="internos" value={product.internos} onChange={(e) => onInputNumberChange(e, 'internos')} mode="currency" currency="USD" locale="en-US" />
+                            <div className="field col-3">
+                                <label htmlFor="internos">Internos %</label>
+                                <InputNumber id="internos" value={product.internos} onChange={(e) => onInputNumberChange(e, 'internos')} integeronly />
                             </div>
-                            <div className="field col-6">
+                            <div className="field col-3">
                                 <label htmlFor="iva">Iva</label>
                                 <Dropdown name="iva" onChange={(e) => onInputChange(e, 'iva')} value={product.iva} options={ivas} optionValue="id" optionLabel="tasa" placeholder="Iva"
                                     filter showClear filterBy="tasa" required autoFocus className={classNames({ 'p-invalid': submitted && !product.iva })} />
                                 {submitted && !product.iva && <small className="p-error">Iva es requerido.</small>}
                             </div>
-                            <div className="field col-6">
+                            <div className="field col-3">
                                 <label htmlFor="tasa">Tasa %</label>
                                 <InputNumber id="tasa" value={product.tasa} onChange={(e) => onInputNumberChange(e, 'tasa')} integeronly />
                             </div>
-                            <div className="field col-6">
+                            <div className="field col-3">
                                 <label htmlFor="precio">Precio Final</label>
                                 <InputNumber id="precio" value={product.precio} readOnly mode="currency" currency="USD" locale="en-US" />
                             </div>
@@ -232,7 +234,7 @@ const Stock = () => {
                     </Dialog>
                 </div>
             </div>
-        ) : (<div className="card">
+        </>) : (<div className="card">
             <h4>Requiere Autenticación</h4>
             <div className="border-round border-1 surface-border p-4">
                 <div className="flex mb-3">

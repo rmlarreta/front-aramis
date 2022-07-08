@@ -56,8 +56,10 @@ const Imputaciones = () => {
     const onSubmitUpdate = () => {
         setSubmitted(true);
         if (model.detalle.trim()
-        ) {
-            dispatch(UpdateImputacion(model));
+        ) { 
+             let lm = [];
+            lm.push(model)
+            dispatch(UpdateImputacion(lm));
             setSubmitted(false);
             setdisplayEdit(false);
         } else {

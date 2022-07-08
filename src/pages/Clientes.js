@@ -90,7 +90,9 @@ const Clientes = () => {
         model.imputacion&&
         model.cuit
         ) {
-            dispatch(UpdateCliente(model));
+            let lm = [];
+            lm.push(model)
+            dispatch(UpdateCliente(lm));
             setSubmitted(false);
             setdisplay(false);
         } else {
