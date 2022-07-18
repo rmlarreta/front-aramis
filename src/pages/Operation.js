@@ -17,7 +17,8 @@ import { messageService } from '../redux/messagesducks';
 import { DeleteDocumentDetalles, InsertOrden, UpdateDocument, UpdateDocumentDetalles } from '../redux/operationsdusck';
 import { DocumentService } from '../service/DocumentService';
 import { PagosService } from '../service/PagosService';
-import { CreatePaymentIntent } from '../redux/pagosducks';
+import { ProgressSpinner } from 'primereact/progressspinner';
+import { CancelPaymentIntent, CreatePaymentIntent, InsertRecibo } from '../redux/pagosducks'; 
 
 const Operation = () => {
     let pago = {
@@ -33,6 +34,9 @@ const Operation = () => {
     const toast = useRef(null);
     const activo = useSelector(store => store.users.activo);
     const idDocument = useSelector(store => store.operations.data);
+
+    const paying = useSelector(store => store.pagos.paying);
+    const payment = useSelector(store => store.pagos.payment);
 
     const documentService = new DocumentService();
     const pagoService = new PagosService();
@@ -56,10 +60,12 @@ const Operation = () => {
     const [mp, setmp] = useState(0);
     const [cc, setcc] = useState(0);
     const [points, setpoints] = useState([]);
-    const [cuentaCorrienteOculta, setcuentaCorrienteOculta] = useState(true)
+    const [cuentaCorrienteOculta, setcuentaCorrienteOculta] = useState(true);
 
     const [pagodisabled, setpagodisabled] = useState(true);
     const [orderdisable, setorderdisabled] = useState(true);
+
+    const [intervalo, setintervalo] = useState(0);
 
     const fetchDocuments = async () => {
         setloading(true);
@@ -71,10 +77,27 @@ const Operation = () => {
         setloading(false);
     }
 
+    const fetchStatus = async (paymentid, id,interval) => {
+        console.log(payment) 
+        console.log(interval) 
+        await pagoService.StatePaymentIntent(paymentid, id)
+            .then(data => {
+                if (data.status==="FINISHED"){                
+                    dispatch(messageService(true, "pago perfecto", 200));
+                    dispatch(InsertRecibo(paymentid,id));
+                    console.log( "clearInterval(interval)")
+                    clearInterval(interval)
+                }
+                 else {
+                console.log("esperando");
+            }
+            }).catch((error) => dispatch(messageService(false, error.response.data.message, error.response.status)));
+        setloading(false);
+    }
+
     const fetchPoints = async () => {
         await pagoService.GetPoints()
             .then(data => {
-                console.log(data)
                 setpoints(data);
             }).catch((error) => dispatch(messageService(false, error.response.data.message, error.response.status)));
     }
@@ -110,7 +133,6 @@ const Operation = () => {
         documento.total > 0 ? setpagodisabled(false) : setpagodisabled(true);
         setOperationDialog(true);
     }
-
 
     const calcularPrecio = (_model) => {
         let subTotal = _model.unitario * _model.cantidad;
@@ -162,7 +184,6 @@ const Operation = () => {
     }
 
     const onGestionarPago = () => {
-        console.log(documento)
         if (documento.total < documento.limite) {
             setcuentaCorrienteOculta(true);
         }
@@ -225,18 +246,24 @@ const Operation = () => {
     }
 
     const onProcesarPago = () => {
-        let payment = [];
-        payment.push({
-            monto: mp,
-            token:points[0].token,
-            deviceId:points[0].id,
-            additional_info: {
-                external_reference: "Aramis Sistemas",
-                print_on_terminal: true,
-                ticket_number: documento.id
-            }
-        }); 
-        dispatch(CreatePaymentIntent(payment))
+        if (mp > 0) {
+            let pagomp = {
+                amount: mp.toString().replace('.', ''),
+                additional_info: {
+                    external_reference: "Aramis Sistemas",
+                    print_on_terminal: true,
+                    ticket_number: documento.id.toString()
+                }
+            };
+            dispatch(CreatePaymentIntent(pagomp, points[0].id))
+        }
+    }
+
+    const onCancelarMp = () => {
+        dispatch(CancelPaymentIntent(payment.id, points[0].id))
+            .then(
+                dispatch(messageService(false, 'CANCELANDO PAGO...', 200))
+            )
     }
 
     useEffect(() => {
@@ -245,6 +272,24 @@ const Operation = () => {
             fetchPoints();
         }
     }, [activo, idDocument]);
+
+    useEffect(() => {
+        if (payment) {
+            console.log(payment)
+          let interval = setInterval(() => {
+                setintervalo(interval)
+                fetchStatus(payment.id, points[0].id,interval);
+            }, 3000);
+
+            setTimeout(() => {
+                clearInterval(interval);
+            }, 20000); 
+        } else {
+            console.log("cancelando")
+            console.log(intervalo)
+            clearInterval(intervalo);
+        }
+    }, [payment]);
 
     const actionTemplate = (rowData) => {
         return (
@@ -286,6 +331,12 @@ const Operation = () => {
         <React.Fragment>
             <Button label="Cancelar" icon="pi pi-times" className="p-button-danger" onClick={() => setpagoDialog(false)} />
             <Button label="Pagar" icon="pi pi-dollar" onClick={() => onProcesarPago()} />
+        </React.Fragment>
+    );
+
+    const mpDialogFooter = (
+        <React.Fragment>
+            <Button label="Cancelar" icon="pi pi-times" className="p-button-danger" onClick={() => onCancelarMp()} />
         </React.Fragment>
     );
 
@@ -420,6 +471,9 @@ const Operation = () => {
                                 </div>
                             </div>
                         </div>
+                    </Dialog>
+                    <Dialog visible={paying} style={{ width: '25vw' }} header="Procese el pago en la terminal POINT" modal footer={mpDialogFooter}>
+                        <ProgressSpinner style={{ width: '50px', height: '50px' }} strokeWidth="8" fill="var(--surface-ground)" animationDuration=".5s" />
                     </Dialog>
                 </div>
             </div>
