@@ -18,15 +18,17 @@ import { DeleteDocumentDetalles, InsertOrden, UpdateDocument, UpdateDocumentDeta
 import { DocumentService } from '../service/DocumentService';
 import { PagosService } from '../service/PagosService';
 import { ProgressSpinner } from 'primereact/progressspinner';
-import { CancelPaymentIntent, CreatePaymentIntent, InsertRecibo } from '../redux/pagosducks'; 
+import { CancelPaymentIntent, CreatePaymentIntent, InsertInterval, InsertRecibo } from '../redux/pagosducks';
+import { registerUser } from '../redux/usersducks';
+import { registry } from 'chart.js';
 
 const Operation = () => {
     let pago = {
-        tipo: '',
-        detalle: '',
-        codigo: '',
-        sucursal: '',
-        monto: 0,
+        Tipo: '',
+        Detalle: '',
+        Codigo: '',
+        Sucursal: '',
+        Monto: 0,
     };
 
     const dispatch = useDispatch();
@@ -55,6 +57,9 @@ const Operation = () => {
     const [operationDialog, setOperationDialog] = useState(false);
     const [pagoDialog, setpagoDialog] = useState(false);
 
+    const [count, setCount] = useState(0);
+    const [intervalId, setIntervalId] = useState(0);
+
     // tabla pagos
     const [eft, seteft] = useState(0);
     const [mp, setmp] = useState(0);
@@ -65,7 +70,7 @@ const Operation = () => {
     const [pagodisabled, setpagodisabled] = useState(true);
     const [orderdisable, setorderdisabled] = useState(true);
 
-    const [intervalo, setintervalo] = useState(0);
+    const [factura, setFactura] = useState(null);
 
     const fetchDocuments = async () => {
         setloading(true);
@@ -73,24 +78,6 @@ const Operation = () => {
             .then(data => {
                 setdocumento(data.documentsDto[0]);
                 setdetalles(data.documentsDetallDto);
-            }).catch((error) => dispatch(messageService(false, error.response.data.message, error.response.status)));
-        setloading(false);
-    }
-
-    const fetchStatus = async (paymentid, id,interval) => {
-        console.log(payment) 
-        console.log(interval) 
-        await pagoService.StatePaymentIntent(paymentid, id)
-            .then(data => {
-                if (data.status==="FINISHED"){                
-                    dispatch(messageService(true, "pago perfecto", 200));
-                    dispatch(InsertRecibo(paymentid,id));
-                    console.log( "clearInterval(interval)")
-                    clearInterval(interval)
-                }
-                 else {
-                console.log("esperando");
-            }
             }).catch((error) => dispatch(messageService(false, error.response.data.message, error.response.status)));
         setloading(false);
     }
@@ -201,11 +188,11 @@ const Operation = () => {
         let cc = 0;
         switch (name) {
             case 'eft':
-                mp = total - val;
+                mp = total - val
                 eft = val;
                 break;
             case 'mp':
-                eft = total - val;
+                eft = total - val
                 mp = val;
                 break;
         }
@@ -255,6 +242,7 @@ const Operation = () => {
                     ticket_number: documento.id.toString()
                 }
             };
+            console.log(pagomp);
             dispatch(CreatePaymentIntent(pagomp, points[0].id))
         }
     }
@@ -266,6 +254,71 @@ const Operation = () => {
             )
     }
 
+    const StatePaymentIntent = () => {
+        pagoService.StatePaymentIntent(payment.id, points[0].id).
+            then(result => {
+                switch (result.status) {
+                    case "OPEN": console.log("OPEN")
+                        console.log(count)
+                        return;
+                    case "CANCELED": console.log("CANCELED")
+                        console.log(count)
+                        setCount(0);
+                        onCancelarMp();
+                        return;
+                    case "ERROR": console.log("ERROR")
+                        console.log(count)
+                        setCount(0);
+                        onCancelarMp();
+                        return;
+                    case "FINISHED": console.log("FINISHED")
+                        setCount(0);
+                        onFinishPay();
+                        return;
+                }
+            })
+    }
+
+    const onFinishPay = () => {
+
+        let _recibo = [];
+        if (eft != 0) {
+            _recibo.push({
+                Tipo: "EFECTIVO",
+                Detalle: documento.id.toString(),
+                Codigo: points[0].id.toString(),
+                Sucursal: points[0].id.toString(),
+                Monto: eft
+            });
+        }
+        if (mp != 0) {
+            _recibo.push({
+                Tipo: "MERCADO PAGO",
+                Detalle: payment.additional_info.ticket_number,
+                Codigo: payment.id,
+                Sucursal: points[0].id.toString(),
+                Monto: mp
+            });
+        }
+        if (cc != 0) {
+            console.log("Cuenta corriente")
+            console.log(cc)
+            _recibo.push({
+                Tipo: "CUENTA CORRIENTE",
+                Detalle: documento.id.toString(),
+                Codigo: points[0].id.toString(),
+                Sucursal: points[0].id.toString(),
+                Monto: cc
+            });
+        }
+
+        dispatch(InsertRecibo(_recibo, documento.cliente, documento.id)).then
+            (data => { console.log(data) }
+            );
+
+    }
+
+
     useEffect(() => {
         if (activo && idDocument) {
             fetchDocuments();
@@ -274,22 +327,27 @@ const Operation = () => {
     }, [activo, idDocument]);
 
     useEffect(() => {
-        if (payment) {
+        if (paying && payment) {
+            console.log("USe Efect ")
+            console.log(paying)
             console.log(payment)
-          let interval = setInterval(() => {
-                setintervalo(interval)
-                fetchStatus(payment.id, points[0].id,interval);
+            const newIntervalId = setInterval(() => {
+                setCount(prevCount => prevCount + 1);
+                setIntervalId(newIntervalId);
             }, 3000);
-
-            setTimeout(() => {
-                clearInterval(interval);
-            }, 20000); 
-        } else {
-            console.log("cancelando")
-            console.log(intervalo)
-            clearInterval(intervalo);
         }
-    }, [payment]);
+    }, [paying, payment]);
+
+    useEffect(() => {
+        if (count > 0 && count <= 40 && payment) {
+            StatePaymentIntent();
+        }
+        if (count > 40) {
+            setCount(0);
+            clearInterval(intervalId)
+            onCancelarMp();
+        }
+    }, [count]);
 
     const actionTemplate = (rowData) => {
         return (
@@ -452,21 +510,21 @@ const Operation = () => {
                                 <br></br>
                                 <label htmlFor="locale-us">Efectivo</label>
                                 <div className="p-inputgroup">
-                                    <InputNumber inputId="locale-us" value={eft} onChange={(e) => onInputPagoChange(e, 'eft')} mode="decimal" locale="en-US" maxFractionDigits={2} />
+                                    <InputNumber inputId="locale-us" value={eft} onChange={(e) => onInputPagoChange(e, 'eft')} mode="decimal" locale="en-US" maxFractionDigits={2} minFractionDigits={2} />
                                     <Button icon="pi pi-dollar" className="p-button-success" onClick={() => aplicaTotal('eft')} />
                                 </div>
                             </div>
                             <div className="field col-12">
                                 <label htmlFor="locale-us">Mercado Pago</label>
                                 <div className="p-inputgroup">
-                                    <InputNumber inputId="locale-us" value={mp} readOnly mode="decimal" locale="en-US" maxFractionDigits={2} />
+                                    <InputNumber inputId="locale-us" value={mp} readOnly mode="decimal" locale="en-US" maxFractionDigits={2} minFractionDigits={2} />
                                     <Button icon="pi pi-dollar" className="p-button-primary" onClick={() => aplicaTotal('mp')} />
                                 </div>
                             </div>
                             <div className="field col-12" hidden={cuentaCorrienteOculta}>
                                 <label htmlFor="locale-us">Cuenta Corriente</label>
                                 <div className="p-inputgroup">
-                                    <InputNumber inputId="locale-us" value={cc} readOnly mode="decimal" locale="en-US" maxFractionDigits={2} />
+                                    <InputNumber inputId="locale-us" value={cc} readOnly mode="decimal" locale="en-US" maxFractionDigits={2} minFractionDigits={2} />
                                     <Button icon="pi pi-briefcase" className="p-button-danger" onClick={() => aplicaTotal('cc')} />
                                 </div>
                             </div>

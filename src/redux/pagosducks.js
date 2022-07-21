@@ -7,7 +7,8 @@ const dataInicial = {
     status: null,
     message: null,
     paying: false,
-    payment: null
+    payment: null,
+    recibido: null
 }
 
 const OK = 'OK'
@@ -28,7 +29,7 @@ export default function pagosReducer(state = dataInicial, action) {
         case PAYMENTINSERT:
             return { ...state, payment: action.payload.data, paying: true }
         case PAYMENTSUCCES:
-            return { ...state, payment: null, paying: false }
+            return { ...state, paying: false, recibido: action.payload.data }
         case PAYMENTFAIL:
             return { ...state, payment: null, paying: false }
         default:
@@ -75,25 +76,36 @@ export const CancelPaymentIntent = (paymentIntent, id) => async (dispatch) => {
         });
 }
 
-export const InsertRecibo = (pago, id) => async (dispatch) => {
-    console.log(dataInicial)
-    /*  await request.delete('Recibos/CancelPaymentIntent/' + paymentIntent + '/' + id)
-         .then(function () {
-             dispatch({
-                 type: PAYMENTFAIL
-             })
-         })
-         .catch((error) => {
-             dispatch({
-                 type: PAYMENTFAIL
-             })
-             dispatch(messageService(false, 'NO SE PUDO CANCELAR EL PAGO', error.response.status));
-         }); */
-    dispatch({
-        type: PAYMENTSUCCES,
-        payload: {
-            data: pago
-        }
-    });
+export const InsertRecibo = (recibo, cliente, document) => async (dispatch) => {
+    
+    let _documents = []
+    _documents.push(document)
+
+    let _recibo = {
+        Cliente: cliente,
+        Fecha: Date.now,
+        Operador: "",
+        ReciboDetalles: recibo,
+        Documents: _documents
+    } 
+    var json = JSON.stringify(_recibo);
+    const options = {
+        headers: { "content-type": "application/json" }
+    }
+    await request.post('Recibos/InsertRecibo', json, options)
+        .then(function (response) {
+            dispatch({
+                type: PAYMENTSUCCES,
+                payload: {
+                    data: response.data
+                }
+            })
+        })
+        .catch((error) => {
+            dispatch({
+                type: PAYMENTFAIL
+            })
+            dispatch(messageService(false, 'NO SE PUDO INGRESAR EL RECIBO', error.response.status));
+        });
 }
 
