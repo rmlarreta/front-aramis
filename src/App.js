@@ -14,7 +14,7 @@ import Users from './pages/Users';
 import Stock from './pages/Stock';
 import Clientes from './pages/Clientes';
 import Documents from './pages/Documents';
-import Operation from './pages/Operation';
+import Operation from './pages/Operation'; 
 //componentes del DEmo
 
 import ChartDemo from './components/ChartDemo';
@@ -30,9 +30,9 @@ import 'prismjs/themes/prism-coy.css';
 import './assets/demo/flags/flags.css';
 import './assets/demo/Demos.scss';
 import './assets/layout/layout.scss';
-import './App.scss';
-
-const App = () => {
+import './App.scss'; 
+ 
+const App = () => { 
     const [layoutMode, setLayoutMode] = useState('static');
     const [layoutColorMode, setLayoutColorMode] = useState('light')
     const [inputStyle, setInputStyle] = useState('outlined');
@@ -267,7 +267,7 @@ const App = () => {
                     <Route path="/stock" component={Stock} />
                     <Route path="/clientes" component={Clientes} />
                     <Route path="/documents" component={Documents} />
-                    <Route path="/operation" component={Operation} />
+                    <Route path="/operation" component={Operation} /> 
                 </div>
 
                 <AppFooter layoutColorMode={layoutColorMode} />

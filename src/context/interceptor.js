@@ -1,7 +1,8 @@
-import axios from 'axios';
+import axios from 'axios';   
 
 const request = axios.create({
-  baseURL: 'https://localhost:7200',
+  baseURL:  process.env.REACT_APP_BASE_URL,
+  
   //baseURL: 'https://mareeweb.azurewebsites.net', //la oficial
 });
  

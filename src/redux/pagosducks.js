@@ -8,7 +8,7 @@ const dataInicial = {
     message: null,
     paying: false,
     payment: null,
-    recibido: null
+    recibido: []
 }
 
 const OK = 'OK'
@@ -17,6 +17,7 @@ const LOADING = 'LOADING'
 const PAYMENTINSERT = 'PAYMENTINSERT'
 const PAYMENTSUCCES = 'PAYMENTSUCCES'
 const PAYMENTFAIL = 'PAYMENTFAIL'
+const RESET = 'RESET'
 
 export default function pagosReducer(state = dataInicial, action) {
     switch (action.type) {
@@ -32,6 +33,8 @@ export default function pagosReducer(state = dataInicial, action) {
             return { ...state, paying: false, recibido: action.payload.data }
         case PAYMENTFAIL:
             return { ...state, payment: null, paying: false }
+        case RESET:
+            return { ...state, payment: null, paying: false, recibido: null }
         default:
             return { ...state }
     }
@@ -61,7 +64,6 @@ export const CreatePaymentIntent = (paymentIntent, id) => async (dispatch) => {
 }
 
 export const CancelPaymentIntent = (paymentIntent, id) => async (dispatch) => {
-    console.log(dataInicial)
     await request.delete('Recibos/CancelPaymentIntent/' + paymentIntent + '/' + id)
         .then(function () {
             dispatch({
@@ -76,8 +78,8 @@ export const CancelPaymentIntent = (paymentIntent, id) => async (dispatch) => {
         });
 }
 
-export const InsertRecibo = (recibo, cliente, document) => async (dispatch) => {
-    
+export const InsertRecibo = (recibo, cliente, document, codTipo) => async (dispatch) => {
+
     let _documents = []
     _documents.push(document)
 
@@ -86,14 +88,15 @@ export const InsertRecibo = (recibo, cliente, document) => async (dispatch) => {
         Fecha: Date.now,
         Operador: "",
         ReciboDetalles: recibo,
-        Documents: _documents
-    } 
+        Documents: _documents,
+        CodTipo: codTipo
+    }
     var json = JSON.stringify(_recibo);
     const options = {
         headers: { "content-type": "application/json" }
     }
     await request.post('Recibos/InsertRecibo', json, options)
-        .then(function (response) {
+        .then(function (response) { 
             dispatch({
                 type: PAYMENTSUCCES,
                 payload: {
@@ -107,5 +110,11 @@ export const InsertRecibo = (recibo, cliente, document) => async (dispatch) => {
             })
             dispatch(messageService(false, 'NO SE PUDO INGRESAR EL RECIBO', error.response.status));
         });
+}
+
+export const onReset = () => async (dispatch) => {
+    dispatch({
+        type: RESET
+    })
 }
 

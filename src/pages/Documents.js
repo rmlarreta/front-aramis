@@ -1,33 +1,25 @@
 import { Button } from 'primereact/button';
 import { Column } from 'primereact/column';
 import { DataTable } from 'primereact/datatable';
-import { TreeTable } from 'primereact/treetable';
 import { Dialog } from 'primereact/dialog';
 import { Dropdown } from 'primereact/dropdown';
-import { InputMask } from 'primereact/inputmask';
-import { InputNumber } from 'primereact/inputnumber';
 import { InputText } from 'primereact/inputtext';
-import { InputTextarea } from 'primereact/inputtextarea';
 import { Skeleton } from 'primereact/skeleton';
 import { Toast } from 'primereact/toast';
-import { classNames } from 'primereact/utils';
 import { default as React, useEffect, useRef, useState } from 'react';
+import Moment from 'react-moment';
 import { useDispatch, useSelector } from 'react-redux';
-import AddCliente from '../components/AddCliente';
-import AddImputacion from '../components/AddImputacion';
-import Imputaciones from '../components/Imputaciones';
+import { useHistory } from 'react-router-dom';
 import { DeleteDocument, InsertDocument } from '../redux/documentsducks';
 import { messageService } from '../redux/messagesducks';
-import { ClienteService } from '../service/ClienteService';
-import { DocumentService } from '../service/DocumentService';
-import Moment from 'react-moment';
-import { useHistory } from 'react-router-dom';
 import { EditDocument } from '../redux/operationsdusck';
+import { onReset } from '../redux/pagosducks';
+import { DocumentService } from '../service/DocumentService';
 const Documents = () => {
-    const options=[
-        {id :1,tipo:"PRESUPUESTOS"},
-        {id :3,tipo:"ORDENES"},
-        {id :2,tipo:"REMITOS"},
+    const options = [
+        { id: 1, tipo: "PRESUPUESTOS" },
+        { id: 3, tipo: "ORDENES" },
+        { id: 2, tipo: "REMITOS" },
     ]
 
     const dispatch = useDispatch();
@@ -36,6 +28,7 @@ const Documents = () => {
     const toast = useRef(null);
     const activo = useSelector(store => store.users.activo);
     const load = useSelector(store => store.documentos.loading);
+    const recibido = useSelector(store => store.pagos.recibido);
 
     const documentService = new DocumentService();
 
@@ -47,14 +40,8 @@ const Documents = () => {
     const [expandedRows, setExpandedRows] = useState(null);
     const dt = useRef(null);
 
-
-    const [clientes, setclientes] = useState([]);
     const [model, setmodel] = useState([]);
     const [tipo, setipo] = useState(1);
-    const [generos, setgeneros] = useState([]);
-    const [imputaciones, setimputaciones] = useState([]);
-    const [display, setdisplay] = useState(false);
-    const [submitted, setSubmitted] = useState(false);
     const [deleteDialog, setDeleteDialog] = useState(false);
 
     const fetchDocuments = async () => {
@@ -67,8 +54,8 @@ const Documents = () => {
         setloading(false);
     }
 
-    const onChangeTipo =(e)=>{
-        const val = (e.target && e.target.value) || '';         
+    const onChangeTipo = (e) => {
+        const val = (e.target && e.target.value) || '';
         setipo(val);
     }
 
@@ -76,7 +63,7 @@ const Documents = () => {
         dispatch(InsertDocument());
     }
 
-    const onEditDocument = (data) => { 
+    const onEditDocument = (data) => {
         dispatch(EditDocument(data));
         history.push("/operation");
     }
@@ -87,7 +74,7 @@ const Documents = () => {
     }
 
     const onDeleteDocument = () => {
-        dispatch(DeleteDocument(model.id)); 
+        dispatch(DeleteDocument(model.id));
         setDeleteDialog(false);
     }
 
@@ -95,7 +82,13 @@ const Documents = () => {
         if (activo) {
             fetchDocuments();
         }
-    }, [activo,load,tipo]);
+    }, [activo, load, tipo]);
+
+    useEffect(() => {
+        if (recibido > 0) {
+            dispatch(onReset());
+        }
+    }, []);
 
     const header = (
         <div className="flex flex-column md:flex-row md:justify-content-between md:align-items-center">
@@ -104,8 +97,8 @@ const Documents = () => {
                 <InputText type="search" onInput={(e) => setfilter(e.target.value)} placeholder="Buscar..." />
             </span>
             <div className="field col-6">
-                    <Dropdown name="tipo" onChange={(e) => onChangeTipo(e)} value={tipo} options={options} optionValue="id" optionLabel="tipo" placeholder="Tipo de Documento"/>
-                 </div>
+                <Dropdown name="tipo" onChange={(e) => onChangeTipo(e)} value={tipo} options={options} optionValue="id" optionLabel="tipo" placeholder="Tipo de Documento" />
+            </div>
             <Button icon="pi pi-plus" className="p-button-rounded p-button-success" aria-label="Add" onClick={() => insertDocument()} />
         </div>
     );

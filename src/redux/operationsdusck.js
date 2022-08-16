@@ -12,6 +12,7 @@ const OK = 'OK'
 const FAIL = 'FAIL'
 const LOADING = 'LOADING'
 const SETDATA = 'SETDATA'
+const FIN = 'FIN'
 
 export default function operationsReducer(state = dataInicial, action) {
     switch (action.type) {
@@ -23,6 +24,8 @@ export default function operationsReducer(state = dataInicial, action) {
             return { ...state, loading: true }
         case SETDATA:
             return { ...state, loading: false, data: action.payload.data }
+        case FIN:
+            return { ...dataInicial }
         default:
             return { ...state }
     }
@@ -171,7 +174,7 @@ export const UpdateDocument = (documento) => async (dispatch) => {
                     message: response.message
                 }
             })
-            dispatch(messageService(true, response.data)); 
+            dispatch(messageService(true, response.data));
             dispatch({
                 type: SETDATA,
                 payload: {
@@ -228,7 +231,7 @@ export const InsertOrden = (id) => async (dispatch) => {
     dispatch({
         type: LOADING
     })
-    await request.patch('Documents/InsertOrden/'+id)
+    await request.patch('Documents/InsertOrden/' + id)
         .then(function (response) {
             dispatch({
                 type: OK,
@@ -236,7 +239,7 @@ export const InsertOrden = (id) => async (dispatch) => {
                     status: response.status,
                     message: response.message
                 }
-            }); 
+            });
             dispatch(messageService(true, response.data));
             dispatch({
                 type: SETDATA,
@@ -256,12 +259,12 @@ export const InsertOrden = (id) => async (dispatch) => {
             dispatch(messageService(false, error.response.data.message, error.response.status));
         });
 }
- 
-export const UpdateClienteDocument = (id,cliente) => async (dispatch) => {
+
+export const UpdateClienteDocument = (id, cliente) => async (dispatch) => {
     dispatch({
         type: LOADING
     })
-    await request.patch('Documents/UpdateClienteDocument/'+id+'/'+cliente)
+    await request.patch('Documents/UpdateClienteDocument/' + id + '/' + cliente)
         .then(function (response) {
             dispatch({
                 type: OK,
@@ -269,7 +272,7 @@ export const UpdateClienteDocument = (id,cliente) => async (dispatch) => {
                     status: response.status,
                     message: response.message
                 }
-            }); 
+            });
             dispatch(messageService(true, response.data));
             dispatch({
                 type: SETDATA,
@@ -288,4 +291,10 @@ export const UpdateClienteDocument = (id,cliente) => async (dispatch) => {
             })
             dispatch(messageService(false, error.response.data.message, error.response.status));
         });
+}
+
+export const FinalizarOperation = () => async (dispatch) => {
+    dispatch({
+        type: FIN
+    })
 }
