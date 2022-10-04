@@ -78,38 +78,40 @@ export const CancelPaymentIntent = (paymentIntent, id) => async (dispatch) => {
         });
 }
 
-export const InsertRecibo = (recibo, cliente, document, codTipo) => async (dispatch) => {
+export function InsertRecibo(recibo, cliente, document, codTipo) {
+    return async (dispatch) => {
 
-    let _documents = []
-    _documents.push(document)
+        let _documents = [];
+        _documents.push(document);
 
-    let _recibo = {
-        Cliente: cliente,
-        Fecha: Date.now,
-        Operador: "",
-        ReciboDetalles: recibo,
-        Documents: _documents,
-        CodTipo: codTipo
-    }
-    var json = JSON.stringify(_recibo);
-    const options = {
-        headers: { "content-type": "application/json" }
-    }
-    await request.post('Recibos/InsertRecibo', json, options)
-        .then(function (response) { 
-            dispatch({
-                type: PAYMENTSUCCES,
-                payload: {
-                    data: response.data
-                }
+        let _recibo = {
+            Cliente: cliente,
+            Fecha: Date.now,
+            Operador: "",
+            ReciboDetalles: recibo,
+            Documents: _documents,
+            CodTipo: codTipo
+        };
+        var json = JSON.stringify(_recibo);
+        const options = {
+            headers: { "content-type": "application/json" }
+        };
+        await request.post('Recibos/InsertRecibo', json, options)
+            .then(function (response) {
+                dispatch({
+                    type: PAYMENTSUCCES,
+                    payload: {
+                        data: response.data
+                    }
+                });
             })
-        })
-        .catch((error) => {
-            dispatch({
-                type: PAYMENTFAIL
-            })
-            dispatch(messageService(false, 'NO SE PUDO INGRESAR EL RECIBO', error.response.status));
-        });
+            .catch((error) => {
+                dispatch({
+                    type: PAYMENTFAIL
+                });
+                dispatch(messageService(false, 'NO SE PUDO INGRESAR EL RECIBO', error.response.status));
+            });
+    };
 }
 
 export const onReset = () => async (dispatch) => {

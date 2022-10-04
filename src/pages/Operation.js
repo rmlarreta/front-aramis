@@ -19,7 +19,7 @@ import { messageService } from '../redux/messagesducks';
 import { DeleteDocumentDetalles, FinalizarOperation, InsertOrden, UpdateDocument, UpdateDocumentDetalles } from '../redux/operationsdusck';
 import { CancelPaymentIntent, CreatePaymentIntent, InsertRecibo } from '../redux/pagosducks';
 import { DocumentService } from '../service/DocumentService';
-import { PagosService } from '../service/PagosService'; 
+import { PagosService } from '../service/PagosService';
 
 const Operation = () => {
 
@@ -67,7 +67,7 @@ const Operation = () => {
 
     const history = useHistory();
 
-    const fetchDocuments = async () => {
+    async function fetchDocuments() {
         setloading(true);
         await documentService.GetDocumentsById(idDocument)
             .then(data => {
@@ -77,7 +77,7 @@ const Operation = () => {
         setloading(false);
     }
 
-    const fetchPoints = async () => {
+    async function fetchPoints() {
         await pagoService.GetPoints()
             .then(data => {
                 setpoints(data);
@@ -327,14 +327,21 @@ const Operation = () => {
     }, [count]);
 
     useEffect(() => {
-       if (recibido.id >0 && documento.id>0) { 
+        if (recibido.id > 0 && documento.id > 0) {
+            switch(codTipo){
+                case 3:console.log("Remito");console.log(documento.id);
+                break;
+                case 4: console.log("Factura");console.log(documento.id);
+                break;
+                default:console.log("Solo Recibo");
+            }
             documentService.Report(recibido.documents[0])
-            .then(
-                setdocumento(null),
-                dispatch(FinalizarOperation()),
-                history.push('/documents')
-            );             
-        }
+                .then(
+                    setdocumento(null),
+                    dispatch(FinalizarOperation()),
+                    history.push('/documents')
+                );
+        }x  
     }, [recibido]);
 
 

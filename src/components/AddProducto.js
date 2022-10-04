@@ -75,7 +75,7 @@ const AddProducto = () => {
     const calcularPrecio = (_product) => {
         let iva = ivas.find(id => id.id === _product.iva);
         if (iva) {
-            let precio = _product.costo * (1 + (iva.tasa / 100)) * (1 + (_product.tasa / 100)) * (1+(_product.internos/100));
+            let precio = (_product.costo * (1 + (iva.tasa / 100)) * (1 + (_product.tasa / 100))) + _product.internos;
             _product.precio = precio;
             setProduct(_product);
         }
@@ -136,7 +136,7 @@ const AddProducto = () => {
                     <InputSwitch checked={product.servicio} onChange={(e) => onInputChange(e, 'servicio')} />
                 </div>
                 <div className="field col-3">
-                    <label htmlFor="internos">Internos %</label>
+                    <label htmlFor="internos">Internos $</label>
                     <InputNumber id="internos" value={product.internos} onChange={(e) => onInputNumberChange(e, 'internos')} integeronly />
                 </div>
                 <div className="field col-3">
